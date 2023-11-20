@@ -1,0 +1,110 @@
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+
+local PetDataModule = require(ReplicatedStorage.Modules.PetsData)
+
+local AutoHatchEggEvent = ReplicatedStorage.RemoteEvents.AutoHatchEgg
+local EggPetsEvent = ReplicatedStorage:FindFirstChild("RemoteEvents"):FindFirstChild("EggPets")
+local PetHatchingGui = game.Players.LocalPlayer.PlayerGui:WaitForChild("PetHatching")
+local Notification = PetHatchingGui.Notfication
+
+local function changeColor(rarity)
+	if rarity == "Common" then
+		Notification.TextColor = BrickColor.new("Bright gray")
+	elseif rarity == "Uncommon" then
+		Notification.TextColor = BrickColor.new("Lime green")
+	elseif rarity == "Rare" then
+		Notification.TextColor = BrickColor.new("Baby blue")
+	elseif rarity == "Epic" then
+		Notification.TextColor = BrickColor.new("Light purple")
+	elseif rarity == "Legendary" then
+		Notification.TextColor = BrickColor.new("Neon orange")
+	elseif rarity == "Mythic" then
+		Notification.TextColor = BrickColor.new("Really red")
+	end
+end
+
+EggPetsEvent.OnClientEvent:Connect(function()
+	
+	local Egg = workspace.Egg.Egg
+
+	local growTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 2, true, 0.2)
+
+	local goal = {
+		Size = Vector3.new(0.5, 0.5, 0.5)
+	}
+
+	local tween = TweenService:Create(Egg, growTweenInfo, goal)
+	tween:Play()
+
+	local randomPetInfo = PetDataModule.ChooseRandomPet()
+	local randomPet = randomPetInfo.Pet
+	local rarity = randomPetInfo.Rarity
+
+	tween.Completed:Connect(function()
+		PetHatchingGui.Enabled = true
+		
+		changeColor(rarity)
+		
+		Notification.Text = "You hached" .. " " .. tostring(randomPet)
+		
+		task.wait(2)
+		
+		PetHatchingGui.Enabled = false
+	end)
+end)
+
+local autoHatching = false
+local currentPetIndex = 0
+
+AutoHatchEggEvent.OnClientEvent:Connect(function(on)
+	if on then
+		if not autoHatching then
+			autoHatching = true
+			currentPetIndex = 1  -- Start with the first pet
+
+			while autoHatching and currentPetIndex <= 10 do
+				print("Hatching Pet " .. currentPetIndex)
+
+				local Egg = workspace.AutoHatchEgg.AutoHatchEgg
+				local PetHatchingGui = game.Players.LocalPlayer.PlayerGui:WaitForChild("PetHatching")
+				local Notification = PetHatchingGui.Notfication
+
+				local growTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 2, true, 0.2)
+
+				local goal = {
+					Size = Vector3.new(0.5, 0.5, 0.5)
+				}
+
+				local tween = TweenService:Create(Egg, growTweenInfo, goal)
+				tween:Play()
+
+				local randomPetInfo = PetDataModule.ChooseRandomPet()
+				local randomPet = randomPetInfo.Pet
+				local rarity = randomPetInfo.Rarity
+
+				tween.Completed:Connect(function()
+					PetHatchingGui.Enabled = true
+
+					changeColor(rarity)
+
+					Notification.Text = "You hatched" .. " " .. tostring(randomPet)
+
+					task.wait(2)
+
+					PetHatchingGui.Enabled = false
+				end)
+
+				wait(3)  -- Delay for 3 seconds before hatching the next pet
+				currentPetIndex = currentPetIndex + 1
+			end
+			autoHatching = false  -- Reset the flag when hatching is done
+		else
+			autoHatching = false  -- Stop auto-hatching
+		end
+	else
+		autoHatching = false
+		-- Handle what to do when auto-hatching is turned off
+	end
+end)
